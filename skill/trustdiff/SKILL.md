@@ -7,6 +7,11 @@ description: >
   (Claude Code, Cursor, Codex, Copilot), before merging AI-assisted work, or when the
   user says "review this AI diff", "can I trust this change", "check this PR for silent
   breakage", "audit what the AI changed", or "trustdiff".
+license: MIT
+metadata:
+  version: 0.1.0
+  author: 风云 (FengYun)
+compatibility: Needs python3 for scripts/surface.py; git optional (directory snapshots work too).
 ---
 
 # trustdiff — can you trust this diff?
@@ -126,6 +131,35 @@ False positives kill review tools. These are not optional:
 4. **Never flag style,** naming taste, or "I would have done it differently".
 5. **Mocks are not inherently evil.** A mock is a finding only when it replaces the
    very logic the PR claims to change, so the suite can no longer fail.
+
+## Example
+
+Input — a PR claiming "perf: speed up low-stock scan". The diff rewrites
+`list_low_stock()` with a dict comprehension (dropping its documented ascending-sort)
+and updates the caller's tests to mock `list_low_stock` with a pre-sorted list. CI is
+green on both sides.
+
+Output:
+
+```json
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2", "category": "contract-change", "severity": "blocker",
+      "file": "report.py", "line": 14,
+      "evidence": "restock_priorities() takes low[-n:] relying on the ascending-shortage order that list_low_stock() no longer guarantees",
+      "why_tests_missed_it": "test_report.py now mocks list_low_stock with a hand-sorted list, so the suite tests the mock",
+      "fix": "restore the sort (or sort at the call site) and un-mock the test"
+    }
+  ]
+}
+```
+
+More runnable examples: the repo's `tests/fixtures/` and `tests/fixtures_scale/`
+directories are ten fully-built PRs each (six planted failure modes + four clean
+decoys) with ground truth in `eval/truth*/` — they double as a regression benchmark
+for this skill.
 
 ## References
 
