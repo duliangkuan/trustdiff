@@ -1,0 +1,6 @@
+{
+  "case": "case06",
+  "drift": true,
+  "categories": ["architecture-violation"],
+  "key_evidence": "head/report_export.py calls open(path, \"w\") directly to persist data/report.json, bypassing the Repository class even though CLAUDE.md mandates that all persistence go through storage/repository.py and forbids any other module from calling open() on a data file."
+}

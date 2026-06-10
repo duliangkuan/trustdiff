@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "T5",
+      "category": "fake-fix",
+      "severity": "blocker",
+      "file": "orderflow/utils/validation.py",
+      "line": 9,
+      "evidence": "The PR claims to make validate_email accept apostrophes (Ticket #88). The _EMAIL_RE pattern in validation.py is identical in base and head: r\"^[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$\" — the apostrophe character (') is not added to the character class. validate_email(\"o'brien@example.com\") still returns False after this PR.",
+      "why_tests_missed_it": "The new test (tests/test_utils.py:52-56) uses the tautological assertion `assert result in (True, False)`. A bool is always in (True, False), so the test passes whether the validator accepts or rejects the apostrophe address. The test is incapable of falsifying the fix.",
+      "fix": "Add the apostrophe to _EMAIL_RE: change r\"[A-Za-z0-9._%+\\-]+\" to r\"[A-Za-z0-9._%+'\\-]+\" (or equivalent). Then change the test assertion to `assert result is True` so it actually verifies the fix."
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_utils.py",
+      "line": 56,
+      "evidence": "`assert result in (True, False)` is a tautology: any Python bool satisfies it. The test_validate_email_apostrophe_local_part function (added in this PR) does not assert that validate_email(\"o'brien@example.com\") returns True — only that it returns some boolean. It would pass even if the validator were replaced with `return False` unconditionally.",
+      "why_tests_missed_it": "The assertion is vacuous by construction — it asserts nothing about the specific expected value, so CI cannot detect the missing fix or any future regression against apostrophe acceptance.",
+      "fix": "Replace `assert result in (True, False)` with `assert result is True` to make the test a real regression guard for Ticket #88."
+    }
+  ]
+}

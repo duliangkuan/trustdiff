@@ -1,0 +1,41 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "orderflow/config.py",
+      "line": 34,
+      "evidence": "VAT_RATE changed from \"0.09\" to \"0.06\". Single source-of-truth update; all consumers use Decimal(config.VAT_RATE) so no hardcoded rates exist elsewhere."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_pricing.py",
+      "line": 28,
+      "evidence": "compute_tax(100.00) expectation updated 9.00 -> 6.00. Arithmetic correct: 100.00 * 0.06 = 6.00."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_pricing.py",
+      "line": 37,
+      "evidence": "Standard customer breakdown: tax 1.80 -> 1.20, total 21.80 -> 21.20. Correct: 20.00 * 0.06 = 1.20; 20.00 + 1.20 = 21.20."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_pricing.py",
+      "line": 48,
+      "evidence": "Gold customer breakdown: tax 8.10 -> 5.40, total 98.10 -> 95.40. Correct: taxable_after_discount = 90.00; 90.00 * 0.06 = 5.40; 100.00 - 10.00 + 5.40 = 95.40."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_orders_service.py",
+      "line": 49,
+      "evidence": "Orders service totals: tax 3.97 -> 2.65, total 54.57 -> 53.25. Correct: taxable_base_after_discount = 44.10; 44.10 * 0.06 = 2.646 -> rounds to 2.65; 49.00 - 4.90 + 2.65 + 6.50 = 53.25."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_handlers.py",
+      "line": 13,
+      "evidence": "Handler integration total updated 54.57 -> 53.25, consistent with orders service test above."
+    }
+  ]
+}

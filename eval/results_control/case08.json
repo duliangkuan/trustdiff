@@ -1,0 +1,1 @@
+{"verdict": "approve", "findings": [{"severity": "info", "file": "parser.py", "line": 0, "evidence": "Pure refactor: _is_skippable and _split_pair helpers faithfully reproduce the original inline logic; parse_config public signature and behavior are unchanged."}]}

@@ -1,0 +1,23 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/utils/validation.py",
+      "line": 10,
+      "evidence": "_EMAIL_RE is unchanged from base: apostrophe (') is not added to the character class [A-Za-z0-9._%+\\-]+, so validate_email(\"o'brien@example.com\") still returns False. The stated fix (ticket #88) was never implemented."
+    },
+    {
+      "severity": "blocker",
+      "file": "tests/test_utils.py",
+      "line": 56,
+      "evidence": "The regression test asserts `result in (True, False)`, which is a tautology — it passes whether the validator accepts or rejects the address. This provides zero coverage of the requirement and will not catch regressions."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/utils/text.py",
+      "line": 51,
+      "evidence": "Docstring tidied: added 'characters. A non-positive `limit` yields an empty string.' This is a cosmetic improvement with no behavioral change."
+    }
+  ]
+}

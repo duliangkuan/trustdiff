@@ -1,0 +1,17 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "stats.py",
+      "line": 9,
+      "evidence": "Guard uses `if not values:` which correctly catches empty list/tuple inputs. Non-sequence iterables without __len__ would still fail on the subsequent `len(values)` call, but this was already broken before this PR and is not a regression."
+    },
+    {
+      "severity": "info",
+      "file": "stats.py",
+      "line": 17,
+      "evidence": "`variance([])` now surfaces `ValueError('empty dataset')` via the `mean()` call rather than `ZeroDivisionError`. Consistent error behaviour, no guard needed in `variance` itself."
+    }
+  ]
+}

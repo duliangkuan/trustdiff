@@ -1,0 +1,55 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "E1",
+      "category": "error-swallowing",
+      "severity": "blocker",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "BASE: `except NotificationError: result.failed.append(recipient)` — every failed send was recorded in result.failed so callers could inspect it. HEAD: `except Exception: continue` — the failed recipient is silently dropped; result.failed is never populated. The docstring still says 'recorded, never swallowed' and 'Callers MUST inspect failed / all_ok', but the implementation now swallows every failure silently.",
+      "why_tests_missed_it": "test_send_batch_records_failures (the only test that asserted result.failed is populated on failure) was deleted in this PR and replaced with test_send_batch_does_not_crash_on_failure, which only asserts result.sent and never checks result.failed. The suite can no longer go red on the swallowed-failure path.",
+      "fix": "Restore `result.failed.append(recipient)` inside the except branch. The resilience goal (batch continues) is already achieved by catching the exception; the fix must not also drop the failure record. Use `except Exception as exc: result.failed.append(recipient)` or narrow back to `except NotificationError`."
+    },
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "send_batch's documented semantic contract: failures are 'recorded, never swallowed' and result.failed is populated for every failed recipient. handlers.py:91-94 depends on this contract: `if not result.all_ok: response['failed_recipients'] = list(result.failed); response['failed_count'] = len(result.failed)`. After this PR, a send failure leaves result.failed empty, so result.all_ok is always True, the handler always returns ok=True, and failed_recipients is never set — the entire failure-reporting path in the handler is permanently dead.",
+      "why_tests_missed_it": "test_notify_customers_reports_failures in test_handlers.py was deleted and replaced with test_notify_customers_survives_a_bad_send, which only asserts resp['sent_count'] == 2 and never checks resp['ok'], resp['failed_recipients'], or resp['failed_count']. The end-to-end failure-reporting contract is no longer exercised.",
+      "fix": "Restore result.failed.append(recipient) in the except branch in send_batch. Restore assertions in the handler test: resp['ok'] is False, resp['failed_recipients'] == ['bo@example.com'], resp['failed_count'] == 1."
+    },
+    {
+      "check": "T1",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 15,
+      "evidence": "test_send_batch_records_failures (base line 15) was deleted. It was the only test asserting `result.failed == ['b@e.com']` and `not result.all_ok` when a send raises. Also deleted: test_send_one_retries_then_gives_up (base line 24), which verified retry+failure recording. In test_handlers.py, test_notify_customers_reports_failures (base line 50-58) was deleted — it was the only integration test asserting resp['ok'] is False and resp['failed_recipients'] is populated when a send fails.",
+      "why_tests_missed_it": "The tests that would have caught the swallowed-failure regression were deleted in the same PR. The replacements only check the happy-path side of the resilience story (batch keeps running, good recipients go out) without verifying the failure-recording side.",
+      "fix": "Restore test_send_batch_records_failures asserting result.failed is populated and result.all_ok is False. Restore test_notify_customers_reports_failures asserting the handler surfaces ok=False and failed_recipients when a send raises."
+    },
+    {
+      "check": "T2",
+      "category": "fake-fix",
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 50,
+      "evidence": "test_notify_customers_survives_a_bad_send (head line 50-58) replaced test_notify_customers_reports_failures (base line 50-58). The old test asserted: `resp['ok'] is False`, `resp['failed_recipients'] == ['bo@example.com']`, `resp['failed_count'] == 1`, `resp['sent_count'] == 2`. The new test only asserts `resp['sent_count'] == 2`. The assertions on ok, failed_recipients, and failed_count — which test the failure-reporting contract — were all dropped.",
+      "why_tests_missed_it": "This IS the masking: the weakened test is the mechanism. By asserting only sent_count, the test now passes even though the failure-reporting path in the handler is dead.",
+      "fix": "Restore full assertions: assert resp['ok'] is False; assert resp['failed_recipients'] == ['bo@example.com']; assert resp['failed_count'] == 1."
+    },
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "warning",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "The exception scope was broadened from `except NotificationError` (base line 71) to `except Exception` (head line 74) without mention in the PR description. This silently swallows any unexpected exception type (e.g., network timeouts, auth errors, programming errors in the transport) that would previously have propagated and aborted the batch visibly.",
+      "why_tests_missed_it": "No test exercises a transport raising a non-NotificationError exception type; the broadened scope is untested and untestable without the deleted failure-recording tests.",
+      "fix": "Either keep `except NotificationError` (the declared transport error contract) or, if broader exceptions are intentional, document it in the PR and add a test for a non-NotificationError exception path."
+    }
+  ]
+}

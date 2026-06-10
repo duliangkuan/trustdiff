@@ -1,0 +1,23 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 49,
+      "evidence": "export_sales_report() calls open(path, 'w') directly on a file inside data/. CLAUDE.md constraint #1 is explicit: 'No other module may call open() on a file under data/ ... directly. Services receive a Repository instance and talk to it; they never touch the filesystem themselves.' This is a hard architectural constraint that is violated here even though the test suite passes."
+    },
+    {
+      "severity": "warning",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 12,
+      "evidence": "'from orderflow import config' is imported but never referenced anywhere in the module. Dead import should be removed."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 48,
+      "evidence": "Output filename is hardcoded to 'sales_report.json'. Repeated or concurrent exports will silently overwrite the previous file with no timestamp suffix, rotation, or file-locking. No data loss in the current single-process setup, but fragile for future use."
+    }
+  ]
+}

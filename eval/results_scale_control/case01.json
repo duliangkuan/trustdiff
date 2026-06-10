@@ -1,0 +1,29 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/inventory.py",
+      "line": 55,
+      "evidence": "The list comprehension in list_low_stock has no .sort() call; the base version ended with items.sort(key=lambda item: item.shortage). The documented contract — 'sorted by shortage in ASCENDING order, most-urgent item LAST' — is violated. handlers.restock_priorities relies on reversed(low[-top_n:]) to surface the most urgent SKU first; without the guaranteed sort that logic is silently wrong in production whenever repo.list_products() returns items in a different order."
+    },
+    {
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 37,
+      "evidence": "test_restock_priorities_most_urgent_first and test_restock_priorities_respects_top_n now monkeypatch inventory.list_low_stock with a hardcoded ordered list, so they no longer test the real integration path. The old tests exercised the full stack (real scan -> real sort -> handler reversal) and would have caught the missing sort; the new tests pass even with the broken production code."
+    },
+    {
+      "severity": "warning",
+      "file": "tests/test_inventory.py",
+      "line": 15,
+      "evidence": "test_list_low_stock_sorted_ascending_by_shortage was replaced by test_list_low_stock_reports_all_low_items, which checks shortage values by membership (set lookup) but does not assert the ascending sort order. The sort-order contract is therefore uncovered by the new test suite."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/inventory.py",
+      "line": 38,
+      "evidence": "_low_cutoff returns threshold-1 when FEATURE_INCLUSIVE_LOW_STOCK is False. For threshold=0 this gives cutoff=-1, so on_hand <= -1 is never satisfied and a product with 0 stock would be excluded. The original code had on_hand < 0 which was identically vacuous, so behavioral parity is preserved for all realistic (non-negative) stock values."
+    }
+  ]
+}

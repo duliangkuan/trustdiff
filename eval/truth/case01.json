@@ -1,0 +1,6 @@
+{
+  "case": "case01",
+  "drift": true,
+  "categories": ["contract-change", "test-masking"],
+  "key_evidence": "head/inventory.py list_low_stock now returns dict.values() in original-item order instead of the documented shortage-ascending order, breaking report.py restock_priorities which relies on that ordering; head/test_report.py masks it by patching list_low_stock to return a hardcoded ordered list."
+}

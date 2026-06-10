@@ -1,0 +1,45 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "E1",
+      "category": "error-swallowing",
+      "severity": "blocker",
+      "file": "sync.py",
+      "line": 15,
+      "evidence": "head sync.py lines 12-16: `except Exception: continue` swallows every upload error silently — no log, no counter, no re-raise. The failed file is simply omitted from the returned list. main.py line 13-16 calls `upload_all` and relies on an exception being raised to populate its `{\"ok\": False, \"error\": ...}` branch; because `upload_all` now never raises, `run_sync` always returns `{\"ok\": True}` even when one or more files were not uploaded. The operator has no signal that data was lost.",
+      "why_tests_missed_it": "test_run_sync_reports_failure (base test_sync.py lines 30-34) was the only test that verified run_sync surfaces partial failure as ok=False. That test was deleted in this PR and replaced with test_run_sync_ok_when_resilient which asserts the opposite (ok=True), so the suite now cannot go red on the silent-loss path.",
+      "fix": "Either (a) return a result object from upload_all that distinguishes uploaded vs failed files, and update run_sync to inspect it and set ok=False / populate an error field when any file failed; or (b) log each swallowed exception and expose a failed_files list in the return value so callers can alert. Also restore (or rewrite) a test that asserts run_sync signals partial failure to the operator."
+    },
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "main.py",
+      "line": 14,
+      "evidence": "base sync.py docstring: 'If any single upload fails, the underlying exception propagates to the caller.' head sync.py docstring: 'Uploads are resilient: the batch keeps going.' main.py was NOT changed: its try/except block (lines 12-16) and docstring ('On failure the error is surfaced as {\"ok\": False, \"error\": ...}') still document and implement the old error-propagation contract. The except branch at main.py line 14 is now dead code for upload errors, so run_sync's stated contract is silently broken.",
+      "why_tests_missed_it": "test_run_sync_reports_failure (the only test exercising main.py's error path) was deleted. The new test test_run_sync_ok_when_resilient passes against both base and head for its own assertion, so it is not a discriminating test for the main.py contract violation.",
+      "fix": "Update main.py: either remove the now-dead except branch and revise the docstring, or restructure upload_all to return partial-failure information and have run_sync inspect it, preserving the operator-visible error signal."
+    },
+    {
+      "check": "T1",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "test_sync.py",
+      "line": 30,
+      "evidence": "base test_sync.py lines 30-34: test_run_sync_reports_failure asserts result['ok'] is False and 'network error' in result['error'] when a file upload fails. This test is deleted in head with no replacement that verifies operators are notified of partial failures. The PR description says 'run_sync reports success when the rest of the batch goes through' — but this is precisely the behavior being disputed as a correctness regression, not a reason to delete the failure-reporting test.",
+      "why_tests_missed_it": "The test was deleted. CI goes green because the assertion that would fail (ok=False) no longer exists in the suite.",
+      "fix": "Add a test that asserts run_sync (or some observable output) signals partial failure when one or more files were not uploaded — e.g., ok=False, or a non-empty failed_files list, or a logged warning."
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "warning",
+      "file": "test_sync.py",
+      "line": 25,
+      "evidence": "test_upload_all_no_longer_crashes (head test_sync.py lines 22-27) uses `assert 'id-a' in ids` and `assert 'id-c' in ids` rather than exact equality. It does not assert that 'id-b' is absent from the result, meaning a future regression that accidentally includes 'id-b' (e.g., the error is swallowed but a default id is appended) would not be caught.",
+      "why_tests_missed_it": "The assertion is a subset check, not a full-list assertion. The weakening is intentional for the resilience story but leaves the partial-list invariant unverified.",
+      "fix": "Assert the full returned list: `assert ids == ['id-a', 'id-c']` to pin both presence of successful uploads and absence of the failed one."
+    }
+  ]
+}

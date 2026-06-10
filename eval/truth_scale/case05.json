@@ -1,0 +1,6 @@
+{
+  "case": "case05",
+  "drift": true,
+  "categories": ["contract-change"],
+  "key_evidence": "orderflow/services/shipping.py:estimate_eta_hours changes the carrier_timeout unit from seconds to milliseconds (now divides timeout by 1000 and the docstring says MILLISECONDS), but the cross-package caller orderflow/services/orders.py:estimated_delivery_hours still passes config.HTTP_TIMEOUT_S (=30, a seconds value), so the carrier handling component is now computed as 30ms instead of 30s. The drift is masked because tests/test_orders_service.py monkeypatches shipping.estimate_eta_hours, so the propagated unit is never asserted."
+}

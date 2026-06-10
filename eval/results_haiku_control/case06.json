@@ -1,0 +1,11 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 49,
+      "evidence": "Direct filesystem write violates CLAUDE.md constraint #1: 'All durable reads and writes MUST go through Repository'. Services must not call open() directly; they must delegate to Repository for all persistence."
+    }
+  ]
+}

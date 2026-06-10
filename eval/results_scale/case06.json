@@ -1,0 +1,15 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "A1",
+      "category": "architecture-violation",
+      "severity": "blocker",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 49,
+      "evidence": "export_sales_report() calls open(path, 'w') directly to write a file under the default directory 'data/' (EXPORT_DIR = 'data', line 18). CLAUDE.md Constraint #1 states: 'No other module may call open() on a file under data/ (or any persistent data file) directly. Services receive a Repository instance and talk to it; they never touch the filesystem themselves.'",
+      "why_tests_missed_it": "test_export_writes_file (tests/test_reporting_export.py:23) passes a pytest tmp_path as the directory, so the test never writes to the actual data/ directory and the architectural rule is never exercised. The test validates that file-writing works, not that it goes through the Repository.",
+      "fix": "Add a method to Repository (e.g. write_export(filename, content)) that performs the file write. Have export_sales_report call repo.write_export('sales_report.json', payload) instead of calling os.makedirs and open() directly. The Repository's path-handling logic determines where exports land, keeping storage swappable and auditable per the stated constraint."
+    }
+  ]
+}

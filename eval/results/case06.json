@@ -1,0 +1,15 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "A1",
+      "category": "architecture-violation",
+      "severity": "blocker",
+      "file": "report_export.py",
+      "line": 18,
+      "evidence": "CLAUDE.md mandates 'All persistence MUST go through the Repository class in storage/repository.py. Any other module is forbidden from directly calling open() on a data file.' report_export.py:18 calls open(path, \"w\", encoding=\"utf-8\") directly to write data/report.json, bypassing Repository entirely.",
+      "why_tests_missed_it": "test_report_export.py exercises the real export_report code path end-to-end but never checks whether persistence goes through Repository — it only inspects the file contents after the fact via its own open() call. No test asserts that Repository.save() was called; the architectural constraint is not encoded in any test.",
+      "fix": "Add a save_report(name, payload) method (or reuse save()) on Repository, then have export_report accept an optional repo parameter and call repo.save(...) instead of open(). Update the test to either pass a FakeRepo or assert Repository.save is invoked."
+    }
+  ]
+}

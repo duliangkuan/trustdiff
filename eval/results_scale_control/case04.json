@@ -1,0 +1,29 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "The except clause was widened from `except NotificationError` to bare `except Exception`. This silently swallows every exception type (transport bugs, programming errors, unexpected RuntimeError, etc.) and, crucially, stops appending the recipient to `result.failed`. The original contract — 'a failure for one recipient does not abort the batch but it is recorded, never swallowed' — is violated: failed recipients are now silently dropped from both `result.sent` and `result.failed`, making `result.all_ok` return True even when sends fail. The `continue` also skips the `result.failed.append(recipient)` line entirely."
+    },
+    {
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 15,
+      "evidence": "test_send_batch_records_failures was replaced by test_send_batch_does_not_crash_on_failure, which drops the assertion `assert not result.all_ok` and `assert result.failed == ['b@e.com']`. The new test no longer verifies that failed recipients are recorded in result.failed, which directly hides the regression introduced in notifications.py."
+    },
+    {
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 50,
+      "evidence": "test_notify_customers_reports_failures was replaced by test_notify_customers_survives_a_bad_send, removing the assertions `resp['ok'] is False`, `resp['failed_recipients'] == ['bo@example.com']`, and `resp['failed_count'] == 1`. The handler (handlers.py lines 88-95) has an explicit failure-reporting branch whose entire purpose is surfacing dropped notifications — this test deletion leaves that branch completely uncovered and the behavioral regression undetected."
+    },
+    {
+      "severity": "warning",
+      "file": "orderflow/services/notifications.py",
+      "line": 69,
+      "evidence": "Blank-recipient filtering (`clean = [r for r in recipients if r and r.strip()]`) is a reasonable defensive addition. However, filtered-out blank entries are neither counted in result.sent nor result.failed, so callers have no visibility that the input list was mutated. This is a minor contract ambiguity but does not block by itself."
+    }
+  ]
+}

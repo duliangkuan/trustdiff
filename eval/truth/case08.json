@@ -1,0 +1,6 @@
+{
+  "case": "case08",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Behavior-preserving refactor: head/parser.py extracts _is_skippable and _split_pair helpers but parse_config's public contract and outputs are identical; the unchanged tests in head/test_parser.py still pass."
+}

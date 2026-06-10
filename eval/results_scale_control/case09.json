@@ -1,0 +1,23 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "orderflow/services/reporting.py",
+      "line": 89,
+      "evidence": "month = order.created_at[:7] slices the ISO-8601 string to 'YYYY-MM'. This is correct for the stored format (e.g. '2026-01-15T10:00:00+00:00') and is already validated by the test that pins created_at to concrete strings. The falsy guard on line 85 correctly skips the empty-string default."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/reporting.py",
+      "line": 92,
+      "evidence": "sorted(buckets.items()) sorts lexicographically, which equals chronological order for zero-padded 'YYYY-MM' keys — correct and simple."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/reporting.py",
+      "line": 85,
+      "evidence": "The combined guard 'not order.lines or not order.created_at' is consistent with how total_revenue checks order.lines before accumulating. No pre-existing pattern is broken."
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"verdict": "approve", "findings": [{"severity": "info", "file": "orderflow/services/shipping.py", "line": 29, "evidence": "Added proportional_shipping_fee function that correctly routes calculation through _money() quantizer with ROUND_HALF_UP to fix rounding error (10.05 * 0.125 = 1.26 instead of 1.25)"}]}

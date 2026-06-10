@@ -1,0 +1,6 @@
+{
+  "case": "case06",
+  "drift": true,
+  "categories": ["architecture-violation"],
+  "key_evidence": "orderflow/services/reporting_export.py:export_sales_report calls open(path, \"w\") (and os.makedirs) to persist data/sales_report.json directly, bypassing the Repository even though CLAUDE.md constraint #1 mandates all persistence go through storage/repository.py and forbids any other module from calling open() on a data file. The feature works and tests pass, so the violation is green."
+}

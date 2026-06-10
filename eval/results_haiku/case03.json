@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "T5",
+      "category": "fake-fix",
+      "severity": "blocker",
+      "file": "tests/test_utils.py",
+      "line": 52,
+      "evidence": "The PR claims to fix email validation to accept apostrophes (ticket #88), but the regex in orderflow/utils/validation.py is unchanged: _EMAIL_RE still does not include apostrophes in the character class [A-Za-z0-9._%+\\-]. The new test test_validate_email_apostrophe_local_part (lines 52-56) has a vacuous assertion: 'assert result in (True, False)' passes for ANY return value, including False. This test would pass identically on the unfixed code, proving it does not discriminate the fix.",
+      "why_tests_missed_it": "The assertion is a tautology: any boolean satisfies 'in (True, False)'. The test was not updated to match real behavior because the behavior was never changed. This is a fake fix — the code that supposedly addresses ticket #88 does not exist.",
+      "fix": "Either (a) update the regex to include apostrophes: r\"^[A-Za-z0-9._%+'\\-]+@...\" and change the test assertion to 'assert result is True', or (b) if apostrophes are intentionally rejected, update the PR description to reflect that only a docstring was tidied and the apostrophe case is documented as unsupported."
+    },
+    {
+      "check": "S1",
+      "category": "scope-creep",
+      "severity": "info",
+      "file": "orderflow/utils/text.py",
+      "line": 49,
+      "evidence": "The docstring for truncate() was expanded from 'The returned string (including the ellipsis) never exceeds `limit`.' to include 'A non-positive `limit` yields an empty string.' (lines 51-52). The PR description mentions 'tidied a docstring' but does not specify this semantic clarification, which documents behavior already present in the code.",
+      "why_tests_missed_it": "Docstring changes do not affect test assertions. The behavior (returning empty string for non-positive limit) was already tested and unchanged in code.",
+      "fix": "This is acceptable scope creep if intentional; note it explicitly in the PR description as 'clarified truncate() docstring to document non-positive limit edge case' rather than burying it in 'also tidied'."
+    }
+  ]
+}

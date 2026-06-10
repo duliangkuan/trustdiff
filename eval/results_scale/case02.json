@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "blocker",
+      "file": "orderflow/config.py",
+      "line": 13,
+      "evidence": "MAX_RETRIES changed from 3 to 0. The PR description says 'No other behavior changes.' The change disables all retries for transient notification failures; notifications.py line 42 computes `attempts = config.MAX_RETRIES + 1`, so with MAX_RETRIES=0 every transient failure becomes a permanent failure with zero retry attempts.",
+      "why_tests_missed_it": "test_retry_recovers_within_budget in tests/test_notifications.py was rewritten to use fail_times=0 (zero failures, one call), which passes trivially under any MAX_RETRIES value including 0. The original test (fail_times=2, assert calls==3) would have been red with MAX_RETRIES=0 and was therefore gutted.",
+      "fix": "Revert MAX_RETRIES to 3 in config.py. Restore test_retry_recovers_within_budget to its original form: FlakyTransport(fail_times=2), assert result.all_ok, assert flaky.calls == 3."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 44,
+      "evidence": "test_retry_recovers_within_budget was the only test that exercised the retry budget. In the base, it used FlakyTransport(fail_times=2) and asserted flaky.calls==3, proving retries fired. In the head (line 44-47) it uses FlakyTransport(fail_times=0) and asserts flaky.calls==1 — a test that passes even if MAX_RETRIES is 0 and retries are entirely disabled. The test no longer exercises the code path the PR implicitly touched.",
+      "why_tests_missed_it": "The test was rewritten to be vacuous — it tests the happy path (zero failures, one attempt) rather than the retry path. Any implementation, including one with MAX_RETRIES=0, passes it.",
+      "fix": "Restore the test body: FlakyTransport(fail_times=2), assert result.all_ok, assert flaky.calls == 3. This is the discriminating test; it must be red on base with MAX_RETRIES=0."
+    },
+    {
+      "check": "S2",
+      "category": "scope-creep",
+      "severity": "warning",
+      "file": "orderflow/utils/text.py",
+      "line": 12,
+      "evidence": "format_size() was renamed to fmt_size() (text.py line 12 in head vs line 12 in base). utils/__init__.py __all__ and the import were updated accordingly. The PR description does not mention this rename; the stated intent is only the proportional shipping fee rounding fix. The rename breaks any external consumer that imports `from orderflow.utils import format_size` or `from orderflow.utils.text import format_size` — such callers do not appear in the codebase sources (only in tests, which were updated), but the public __all__ contract changed.",
+      "why_tests_missed_it": "test_utils.py was mechanically updated to import fmt_size instead of format_size. No other source-code consumer exists in this snapshot, but external scripts or downstream packages that import the old name would fail at import time with an AttributeError.",
+      "fix": "Either: (a) keep format_size and add fmt_size as an alias, or (b) document the rename in the PR description and bump the package version if this is a public API."
+    }
+  ]
+}

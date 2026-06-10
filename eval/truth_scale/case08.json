@@ -1,0 +1,6 @@
+{
+  "case": "case08",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Behavior-preserving refactor: orderflow/services/orders.py:create_order is split into private helpers _require_active_customer / _build_lines / _reserve_lines with no change to the public signature or semantics. The tests/ directory is byte-identical to base and passes unmodified. pr.md describes exactly this."
+}

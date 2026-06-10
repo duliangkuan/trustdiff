@@ -1,0 +1,6 @@
+{
+  "case": "case05",
+  "drift": true,
+  "categories": ["contract-change"],
+  "key_evidence": "head/client.py changes fetch's timeout unit from seconds to milliseconds (timeout_s = timeout / 1000), but head/jobs.py fetch_report still calls client.fetch(url, timeout=60), which now means 60ms instead of 60s; the test masks it because FakeTransport only asserts status, never the propagated timeout."
+}

@@ -1,0 +1,48 @@
+{
+  "changed_files": [
+    {
+      "path": "orderflow/services/pricing.py",
+      "status": "modified"
+    },
+    {
+      "path": "tests/test_pricing.py",
+      "status": "modified"
+    }
+  ],
+  "changed_symbols": [
+    {
+      "name": "discount_per_unit",
+      "kind": "function",
+      "file": "orderflow/services/pricing.py",
+      "status": "modified",
+      "old_signature": "discount_per_unit(order: Order, customer: Customer)",
+      "new_signature": "discount_per_unit(order: Order, customer: Customer)"
+    },
+    {
+      "name": "test_discount_per_unit_empty_cart_raises_value_error",
+      "kind": "function",
+      "file": "tests/test_pricing.py",
+      "status": "added",
+      "old_signature": null,
+      "new_signature": "test_discount_per_unit_empty_cart_raises_value_error()"
+    }
+  ],
+  "callers": {
+    "discount_per_unit": [
+      {
+        "file": "tests/test_pricing.py",
+        "line": 74,
+        "text": "assert pricing.discount_per_unit(order, customer) == Decimal(\"10.00\")"
+      },
+      {
+        "file": "tests/test_pricing.py",
+        "line": 81,
+        "text": "pricing.discount_per_unit(_order(), customer)"
+      }
+    ],
+    "test_discount_per_unit_empty_cart_raises_value_error": []
+  },
+  "constraint_docs": [
+    "CLAUDE.md"
+  ]
+}

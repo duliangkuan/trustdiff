@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "blocker",
+      "file": "http_client.py",
+      "line": 3,
+      "evidence": "DEFAULT_RETRIES changed from 3 to 0. Every HttpClient instantiated with default args will now make zero retry attempts on failure. This is a silent production behavior change unrelated to the pagination fix described in the PR.",
+      "why_tests_missed_it": "test_app.py:29 was updated from asserting 'retries=3' to asserting 'retries=0', so the test suite now validates the new (broken) default instead of catching the regression.",
+      "fix": "Revert DEFAULT_RETRIES to 3 in http_client.py and revert the corresponding assertion in test_client_summary."
+    },
+    {
+      "check": "S2",
+      "category": "scope-creep",
+      "severity": "blocker",
+      "file": "tools.py",
+      "line": 6,
+      "evidence": "format_size() was renamed to fmt_size() without any mention in the PR description. The PR only describes a pagination fix. Any external caller (script, downstream module, or serialized reference) still importing 'format_size' will receive an ImportError at runtime.",
+      "why_tests_missed_it": "The only test for this function (test_format_size in test_app.py) had its import updated from 'format_size' to 'fmt_size' in lockstep with the rename, so the test suite never exercises the old public name and cannot detect breakage of existing callers.",
+      "fix": "Either revert the rename (keep format_size) or add a backward-compatible alias 'format_size = fmt_size' and document the rename in the PR description."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "test_app.py",
+      "line": 29,
+      "evidence": "test_client_summary assertion changed from 'http://x (retries=3)' to 'http://x (retries=0)'. The test now encodes the new wrong default rather than guarding against it. It masks the S3 config-change finding above.",
+      "why_tests_missed_it": "The assertion itself was updated to match the changed behavior, making it circular — the test passes precisely because it was rewritten to accept the regression.",
+      "fix": "Restore the assertion to 'http://x (retries=3)' and revert DEFAULT_RETRIES in http_client.py."
+    }
+  ]
+}

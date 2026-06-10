@@ -1,0 +1,6 @@
+{
+  "case": "case07",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Genuine fix: head/stats.py adds an empty-input guard raising ValueError('empty dataset') exactly as pr.md describes, with a matching regression test in head/test_stats.py; no hidden behavior change."
+}

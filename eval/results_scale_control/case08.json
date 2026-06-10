@@ -1,0 +1,17 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "orderflow/services/orders.py",
+      "line": 93,
+      "evidence": "customer_id=customer.id instead of customer_id=customer_id; functionally identical because Repository.get_customer(customer_id) stores and returns the object whose .id equals the lookup key, so the two expressions are always equal in this system"
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/orders.py",
+      "line": 121,
+      "evidence": "_reserve_lines docstring preserves the intent of the original comment 'Reserve stock only after all lines validate'; the ordering invariant (build all lines first, then reserve) is unchanged"
+    }
+  ]
+}

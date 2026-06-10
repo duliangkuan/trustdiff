@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "jobs.py",
+      "line": 10,
+      "evidence": "jobs.py:10 calls `client.fetch(url, timeout=60)` with the comment 'give it a full minute'. After the PR, `timeout` is now milliseconds, so `timeout=60` passes `timeout_s=0.06` (60ms) to the transport instead of 60s — a 1000x reduction. The caller was never updated to use `timeout=60000`.",
+      "why_tests_missed_it": "test_fetch_report_uses_client (test_client.py:27-31) exercises this call path but only asserts `result['status'] == 200`; it never checks `ft.last['timeout_s']`, so the wrong timeout value passes silently.",
+      "fix": "Update jobs.py:10 to `client.fetch(url, timeout=60000)` (60 000ms = 60s), and add an assertion in test_fetch_report_uses_client that `ft.last['timeout_s'] == 60`."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "test_client.py",
+      "line": 27,
+      "evidence": "test_fetch_report_uses_client uses FakeTransport but only checks the HTTP status of the result, not the timeout_s value. The test therefore cannot fail regardless of what timeout is forwarded to the transport, masking the units mismatch in jobs.py.",
+      "why_tests_missed_it": "The assertion `assert result['status'] == 200` is vacuous with respect to the timeout contract; FakeTransport always returns status 200 regardless of timeout_s.",
+      "fix": "Add `assert ft.last['timeout_s'] == 60` to test_fetch_report_uses_client so any caller-side timeout miscount becomes immediately visible."
+    },
+    {
+      "check": "C1",
+      "category": "contract-change",
+      "severity": "warning",
+      "file": "client.py",
+      "line": 10,
+      "evidence": "The public signature of `Client.fetch` changed from `fetch(self, url, timeout=30)` to `fetch(self, url, timeout=30000)`. Any external caller (outside this snapshot) that passes a numeric seconds value — e.g. `fetch(url, timeout=5)` for a 5-second timeout — silently gets 5ms after this change. The surface map shows `jobs.py` as the only internal caller, but the docstring change is the only API-level signal for external consumers.",
+      "why_tests_missed_it": "No test covers external callers. The updated test_fetch_explicit_ms uses timeout=1500 which is an unambiguously millisecond value and does not probe the legacy-seconds scenario.",
+      "fix": "Declare a deprecation or provide a migration guide for external callers; consider a keyword-enforced parameter name change (`timeout_ms`) to make the unit self-documenting and prevent silent misuse."
+    }
+  ]
+}

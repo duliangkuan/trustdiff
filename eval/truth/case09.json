@@ -1,0 +1,6 @@
+{
+  "case": "case09",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Clean additive feature: head/stats.py adds a correct median() function with odd/even/empty tests and a README line, exactly matching pr.md; existing functions and their tests are untouched."
+}

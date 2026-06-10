@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "S1",
+      "category": "scope-creep",
+      "severity": "info",
+      "file": "stats.py",
+      "line": 11,
+      "evidence": "surface.py reports `total` as modified, but base and head bodies are byte-for-byte identical. The surface mapper was triggered by the file changing, not by any real change to `total`. No actual scope creep.",
+      "why_tests_missed_it": "N/A — not a real finding; listed only to document the surface-mapper noise.",
+      "fix": "No action needed."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "send_batch() docstring (line 59) promises failures are 'recorded, never swallowed', but line 74-77 now catches Exception and silently continues without adding to result.failed. OLD: 'except NotificationError: result.failed.append(recipient)' (base line 71-72). NEW: 'except Exception: continue' (case04 line 74-77).",
+      "why_tests_missed_it": "test_send_batch_does_not_crash_on_failure (new test, line 15-20) only verifies good recipients are sent (assert set(result.sent) == ...) but does NOT verify that failures were recorded in result.failed. The deleted test test_send_batch_records_failures explicitly checked assert result.failed == [...], which would have caught this semantic drift. Similarly, test_notify_customers_survives_a_bad_send (new test, line 50-58) only checks sent_count but omits the assertion from the deleted test_notify_customers_reports_failures: assert resp['failed_recipients'] == [...].",
+      "fix": "Restore exception recording: either (a) change 'except Exception' back to 'except NotificationError' and re-add logic to record failures, or (b) keep the broader Exception catch but add 'result.failed.append(recipient)' before 'continue'. Then restore the discriminating assertions: test_send_batch_records_failures must verify result.failed is non-empty when a recipient fails, and test_notify_customers_reports_failures must verify response includes failed_recipients."
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 50,
+      "evidence": "test_notify_customers_reports_failures (base line 50-59) asserted 'assert resp[\"failed_recipients\"] == [\"bo@example.com\"]' and 'assert resp[\"failed_count\"] == 1'. Replacement test_notify_customers_survives_a_bad_send (case04 line 50-58) only asserts 'assert resp[\"sent_count\"] == 2' and omits both failed_recipients and failed_count checks. The new test cannot fail when the handler stops reporting failures.",
+      "why_tests_missed_it": "The test name changed from 'reports_failures' to 'survives_a_bad_send', obscuring that the failure-reporting contract was dropped. Assertion replacement is not discussed in the PR description.",
+      "fix": "Restore the failure-reporting assertions: after line 58, add 'assert \"failed_recipients\" in resp' and 'assert resp[\"failed_recipients\"] == [\"bo@example.com\"]'. This will discriminate between code that survives crashes vs. code that also surfaces the failures the PR promises to report."
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 15,
+      "evidence": "test_send_batch_records_failures (base line 15-21) asserted 'assert not result.all_ok' and 'assert result.failed == [\"b@e.com\"]' to verify failures are recorded. Replacement test_send_batch_does_not_crash_on_failure (case04 line 15-20) only asserts 'assert set(result.sent) == {\"a@e.com\", \"c@e.com\"}', omitting any check that result.failed is non-empty or contains the failed recipient.",
+      "why_tests_missed_it": "The new test verifies the batch doesn't crash and good recipients are sent, but a test that only checks result.sent cannot discriminate between 'failures recorded' and 'failures silently swallowed'. The explicit assertion 'assert result.failed == [...]' is the only mechanism that would have caught the semantic contract violation.",
+      "fix": "Add discriminating assertion to test_send_batch_does_not_crash_on_failure after line 20: 'assert not result.all_ok' and 'assert \"b@e.com\" in result.failed'. This forces the code to prove it records failures, not just survives them."
+    }
+  ]
+}

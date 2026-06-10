@@ -1,0 +1,23 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "inventory.py",
+      "line": 9,
+      "evidence": "The dict-comprehension rewrite silently drops the ascending-shortage sort. BASE returned items sorted by (threshold - quantity) ascending; HEAD returns them in arbitrary insertion order. report.restock_priorities relies on list_low_stock delivering an ascending-sorted list so it can slice low[-n:] and reverse() to obtain worst offenders first. Without the sort, restock_priorities produces wrong results on any real (unsorted) input."
+    },
+    {
+      "severity": "blocker",
+      "file": "test_report.py",
+      "line": 19,
+      "evidence": "Tests were re-written to stub list_low_stock with a pre-sorted mock, so they no longer exercise the real inventory->report integration. The suite passes on HEAD not because the behaviour is correct, but because the tests no longer test the broken contract. The false-green masks the regression introduced in inventory.py."
+    },
+    {
+      "severity": "warning",
+      "file": "inventory.py",
+      "line": 7,
+      "evidence": "The docstring no longer documents the sort order guarantee that was present in BASE. Callers who relied on the documented ascending-shortage ordering (e.g. report.py line 10-11 comment) are silently broken with no indication in the public API."
+    }
+  ]
+}

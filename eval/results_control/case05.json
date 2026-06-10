@@ -1,0 +1,17 @@
+﻿{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "jobs.py",
+      "line": 10,
+      "evidence": "fetch_report still calls client.fetch(url, timeout=60). After the unit change, 60 is now interpreted as 60 ms instead of 60 seconds — a 1000x timeout reduction. The comment explicitly says \"give it a full minute\" but the effective budget is now 0.06 s, virtually guaranteeing timeouts on slow report endpoints."
+    },
+    {
+      "severity": "warning",
+      "file": "test_client.py",
+      "line": 30,
+      "evidence": "test_fetch_report_uses_client only asserts result[\"status\"] == 200 and never checks ft.last[\"timeout_s\"]. This allows the jobs.py regression (60 ms instead of 60 s) to slip through the test suite silently."
+    }
+  ]
+}

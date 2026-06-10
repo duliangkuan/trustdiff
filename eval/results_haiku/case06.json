@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "A1",
+      "category": "architecture-violation",
+      "severity": "blocker",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 49,
+      "evidence": "export_sales_report() directly calls open() on line 49-50 without going through Repository. CLAUDE.md constraint #1 explicitly forbids this: 'No other module may call `open()` on a file under `data/` (or any persistent data file) directly.'",
+      "why_tests_missed_it": "test_export_writes_file verifies the file is written and readable, but does not audit constraint compliance. A green test shows the feature works operationally but is orthogonal to whether architectural constraints are maintained.",
+      "fix": "Add a write_export() method to Repository that handles file I/O, and call it from export_sales_report. Alternatively, move the export function to the API/CLI layer where direct filesystem calls are permitted per CLAUDE.md's layering constraint."
+    },
+    {
+      "check": "A1",
+      "category": "architecture-violation",
+      "severity": "blocker",
+      "file": "orderflow/services/reporting_export.py",
+      "line": 46,
+      "evidence": "export_sales_report() directly calls os.makedirs() without going through Repository. CLAUDE.md constraint #1 mandates all persistent writes go through Repository.",
+      "why_tests_missed_it": "Same as above: test_export_writes_file exercises the feature but does not validate architectural constraints.",
+      "fix": "Delegate directory creation to Repository.write_export() or similar persistent-write method."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "inventory.py",
+      "line": 9,
+      "evidence": "base list_low_stock docstring and implementation guarantee ascending sort by shortage (threshold - quantity); head drops the sort entirely, returning items in dict-insertion (input) order. report.py:restock_priorities docstring line 9 says 'list_low_stock already orders items from least to most depleted' and the implementation relies on this: low[-n:] picks the last-n expecting them to be the most depleted, then reverses. With the sort removed, low[-n:] picks whatever happened to be last in the input, producing wrong SKU order in production.",
+      "why_tests_missed_it": "test_report.py now patches list_low_stock with a pre-sorted return_value, so the test exercises restock_priorities against a hand-crafted ordered list rather than the real implementation. The mock pins the old sorted behavior; the suite can no longer go red due to the missing sort.",
+      "fix": "Either restore the sort in list_low_stock (e.g. return sorted(by_sku.values(), key=lambda it: threshold - it[\"quantity\"])), or sort at the call site in restock_priorities. Then remove the patch.object mocks in test_report.py so the integration path is exercised end-to-end."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "test_report.py",
+      "line": 19,
+      "evidence": "patch.object(report, 'list_low_stock', return_value=ordered) replaces the exact function this PR changes with a pre-sorted stub. The same mock appears at line 25. list_low_stock is the function under change; mocking it means the test_restock_priorities_* tests can no longer detect any behavioral regression in list_low_stock.",
+      "why_tests_missed_it": "The mock is the masking mechanism: CI is green because the tests never call the real list_low_stock at all after this PR.",
+      "fix": "Remove the patch.object mocks and let the tests call list_low_stock directly. This is the integration path that would have caught C2."
+    },
+    {
+      "check": "T5",
+      "category": "fake-fix",
+      "severity": "blocker",
+      "file": "test_report.py",
+      "line": 14,
+      "evidence": "Both modified tests pass on the base code too, because they mock list_low_stock. No new test exercises the real list_low_stock to confirm it still returns a sorted result. There is no discriminating test that would be red on base and green on head for the stated perf change.",
+      "why_tests_missed_it": "Mocks make both old and new code pass the same test; a vacuous test cannot discriminate between a correct and an incorrect implementation.",
+      "fix": "Add a direct unit test for list_low_stock that asserts the returned order matches the shortage-ascending contract (or the new intended contract if the PR explicitly drops the ordering guarantee and updates report.py accordingly)."
+    },
+    {
+      "check": "S1",
+      "category": "scope-creep",
+      "severity": "warning",
+      "file": "inventory.py",
+      "line": 5,
+      "evidence": "The PR removes three docstring lines from list_low_stock that document the sort contract ('The returned list is sorted by shortage amount (threshold - quantity) in ascending order, so the items closest to the threshold come first and the most severely depleted items come last.'). This is not mentioned in the PR description. Removing the contract documentation silences the warning that callers depend on ordering.",
+      "why_tests_missed_it": "Docstring deletions are invisible to the test suite.",
+      "fix": "Either restore the sort (and the docstring), or explicitly update the docstring to say ordering is now unspecified and update all callers that assumed it."
+    }
+  ]
+}

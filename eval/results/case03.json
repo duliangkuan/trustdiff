@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "T5",
+      "category": "fake-fix",
+      "severity": "blocker",
+      "file": "validator.py",
+      "line": 6,
+      "evidence": "validator.py is byte-for-byte identical between base and head. The regex _EMAIL_RE = re.compile(r\"^[A-Za-z0-9.\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$\") still has no '+' in the local-part character class, so 'a+b@example.com' still returns False. The PR claims the fix was applied; the code proves it was not.",
+      "why_tests_missed_it": "The new test (test_validator.py:18) asserts 'result in (True, False)', which is a tautology — it passes whether validate_email returns True or False. Running the new test against the unmodified base code also produces a green result, so CI gives a false pass.",
+      "fix": "Add '+' to the local-part character class in _EMAIL_RE, e.g. r\"^[A-Za-z0-9.\\-+]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$\", and replace the tautological assertion with 'assert validate_email(\"a+b@example.com\") is True'."
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "test_validator.py",
+      "line": 18,
+      "evidence": "test_plus_addressing_supported() asserts 'result in (True, False)'. Every boolean value satisfies this condition; the assertion can never fail. It provides zero signal about whether the claimed fix works.",
+      "why_tests_missed_it": "The assertion itself is the masking mechanism: a vacuous predicate that accepts any return value, so the test is structurally incapable of detecting the unfixed behaviour.",
+      "fix": "Replace with 'assert result is True' (after actually fixing the regex) so the test would have been red on the base code."
+    }
+  ]
+}

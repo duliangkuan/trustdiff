@@ -1,0 +1,6 @@
+{
+  "case": "case01",
+  "drift": true,
+  "categories": ["contract-change", "test-masking"],
+  "key_evidence": "orderflow/services/inventory.py:list_low_stock — the rewrite drops the documented ascending-by-shortage sort (the items.sort(...) line and the ordering clause in the docstring are gone), returning items in repository scan order; orderflow/api/handlers.py:restock_priorities (another package) still slices the tail assuming most-urgent-last, so it now surfaces the least-urgent SKU as most urgent. tests/test_handlers.py masks it by monkeypatching inventory.list_low_stock to return a hardcoded ordered list."
+}

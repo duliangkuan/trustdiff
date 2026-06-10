@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "info",
+      "file": "tests/test_reporting.py",
+      "line": 59,
+      "evidence": "test_monthly_revenue_groups_by_month asserts Decimal(monthly[\"2026-01\"]) > Decimal(\"0\") rather than asserting the exact amount; the grouping logic is validated by the key-set assertion but the per-month totals are not pinned.",
+      "why_tests_missed_it": "N/A — weak assertion does not mask the grouping behavior, which is fully covered by the set equality check on line 58; the loose amount check is consistent with the pattern used throughout the pre-existing reporting tests.",
+      "fix": "Optionally compute the expected total with compute_totals and assert equality; not required for correctness."
+    }
+  ]
+}

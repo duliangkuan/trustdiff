@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "warning",
+      "file": "tests/test_pricing.py",
+      "line": 83,
+      "evidence": "`assert not isinstance(exc.value, ZeroDivisionError)` is vacuously true: `pytest.raises(ValueError)` on line 80 already guarantees `exc.value` is a `ValueError`; `ZeroDivisionError` is not a subclass of `ValueError` (confirmed), so this assertion can never evaluate to False and provides zero discriminating power.",
+      "why_tests_missed_it": "The tautology passes CI without issue — a logically impossible condition is asserted true. The suite does not and cannot catch a vacuous assertion.",
+      "fix": "Remove the tautological line 83 or replace it with a check that actually adds coverage, e.g. `assert type(exc.value) is ValueError` (exact-type guard) if the intent is to rule out exotic subclasses."
+    }
+  ]
+}

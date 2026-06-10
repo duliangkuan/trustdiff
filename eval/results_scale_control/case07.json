@@ -1,0 +1,17 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "orderflow/services/pricing.py",
+      "line": 110,
+      "evidence": "Guard uses item_count()==0 (sum of quantities) rather than not order.lines — this is correct and actually stricter: it would also catch a pathological order with lines whose quantities all sum to zero, matching the behavior of average_line_price."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_pricing.py",
+      "line": 83,
+      "evidence": "assert not isinstance(exc.value, ZeroDivisionError) is a valid check since ValueError is not a subclass of ZeroDivisionError; the assertion is logically sound given the new guard raises ValueError directly."
+    }
+  ]
+}

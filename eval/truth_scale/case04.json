@@ -1,0 +1,6 @@
+{
+  "case": "case04",
+  "drift": true,
+  "categories": ["error-swallowing"],
+  "key_evidence": "orderflow/services/notifications.py:send_batch replaces the per-recipient 'except NotificationError: result.failed.append(recipient)' with a bare 'except Exception: continue', so failed sends are silently dropped and result.failed is never populated. This makes the failure-reporting branch in orderflow/api/handlers.py:notify_customers_handler (another package) dead code — it now always returns ok=True even when notifications were lost. tests/test_handlers.py and test_notifications.py had their 'failure must be reported' assertions replaced with 'does not crash' assertions."
+}

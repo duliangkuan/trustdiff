@@ -1,0 +1,41 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/config.py",
+      "line": 13,
+      "evidence": "MAX_RETRIES changed from 3 to 0. The docstring above this constant explicitly states '0 would disable retries entirely, which we never want in production.' Disabling retries on notification sends means any transient failure immediately becomes a permanent delivery failure, breaking the resilience contract. This is a production-safety regression with no mention in the PR description."
+    },
+    {
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 44,
+      "evidence": "test_retry_recovers_within_budget now passes fail_times=0 and asserts flaky.calls==1 — the test no longer exercises the retry path at all. The original test (fail_times=2, calls==3) actually validated that retries recover from transient failures. This change papers over the broken retry behavior introduced by MAX_RETRIES=0 so the suite still passes, rather than catching the regression."
+    },
+    {
+      "severity": "warning",
+      "file": "orderflow/utils/text.py",
+      "line": 12,
+      "evidence": "Public function renamed from format_size to fmt_size. This is an undocumented breaking API rename not mentioned in the PR description (which claims 'No other behavior changes'). Any external caller using format_size will break at runtime."
+    },
+    {
+      "severity": "warning",
+      "file": "orderflow/utils/__init__.py",
+      "line": 3,
+      "evidence": "Re-export updated from format_size to fmt_size, consistent with the rename, but still an undisclosed breaking change to the public surface."
+    },
+    {
+      "severity": "info",
+      "file": "orderflow/services/shipping.py",
+      "line": 29,
+      "evidence": "New proportional_shipping_fee function correctly routes through _money() for HALF_UP rounding. The core fix is sound."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_shipping.py",
+      "line": 19,
+      "evidence": "Regression tests for proportional_shipping_fee cover the boundary subtotals described in the PR and correctly assert the rounding fix."
+    }
+  ]
+}

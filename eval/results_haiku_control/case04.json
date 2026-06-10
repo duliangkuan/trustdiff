@@ -1,0 +1,17 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/notifications.py",
+      "line": 74,
+      "evidence": "Changed exception handler from catching 'NotificationError' (line 71 in BEFORE) to catching all 'Exception' (line 74 in AFTER). This silently swallows unexpected errors like ValueError, TypeError, etc. that indicate bugs. More critically, when an Exception is caught, the code does 'continue' without recording the recipient in 'result.failed', causing silent data loss. The recipient disappears from both 'sent' and 'failed' lists, violating the docstring promise: 'it is recorded, never swallowed' (line 59)."
+    },
+    {
+      "severity": "warning",
+      "file": "tests/test_notifications.py",
+      "line": 15,
+      "evidence": "Test 'test_send_batch_records_failures' was removed. This test explicitly verified that failed recipients appear in 'result.failed'. The new test 'test_send_batch_does_not_crash_on_failure' only checks that 'result.sent' contains successful recipients but does NOT assert on 'result.failed', missing the critical invariant that failures must be recorded."
+    }
+  ]
+}

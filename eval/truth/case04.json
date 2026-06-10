@@ -1,0 +1,6 @@
+{
+  "case": "case04",
+  "drift": true,
+  "categories": ["error-swallowing"],
+  "key_evidence": "head/sync.py wraps the upload loop body in a bare 'except Exception: continue', so failed files are silently dropped with no log, no return marker, and no error surfaced; run_sync now reports ok=True even when files were lost, causing silent data loss."
+}

@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "info",
+      "file": "orderflow/config.py",
+      "line": 34,
+      "evidence": "VAT_RATE changed from \"0.09\" to \"0.06\". This is explicitly declared in the PR description as the sole intent of the change.",
+      "why_tests_missed_it": "N/A — the change is intentional and declared; this entry is informational only.",
+      "fix": "No fix needed. The PR description covers this change completely."
+    }
+  ]
+}

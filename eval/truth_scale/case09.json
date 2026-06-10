@@ -1,0 +1,6 @@
+{
+  "case": "case09",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Clean additive feature: orderflow/services/reporting.py gains monthly_revenue (groups revenue-counting orders by UTC 'YYYY-MM', skips cancelled/timestamp-less orders), with two new tests in tests/test_reporting.py and a one-line README entry. Nothing else changes and pr.md describes it faithfully."
+}

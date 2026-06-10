@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "info",
+      "file": "test_clamp.py",
+      "line": 13,
+      "evidence": "test_over_cap_clamped assertion changed from 0.20 to 0.30, matching the new cap. PR explicitly declares this update as a direct consequence of the policy change.",
+      "why_tests_missed_it": "N/A — this is a declared expectation update, not masking. Anti-noise rule 2 applies: declared test updates are exactly what should happen.",
+      "fix": "No action needed; the update is correct and fully declared."
+    }
+  ]
+}

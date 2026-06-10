@@ -1,0 +1,29 @@
+{
+  "verdict": "approve",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "pricing.py",
+      "line": 3,
+      "evidence": "MAX_DISCOUNT_RATE changed from 0.20 to 0.30; clamp logic is structurally unchanged and correctly uses the constant, so the new cap propagates automatically to all three functions."
+    },
+    {
+      "severity": "info",
+      "file": "test_clamp.py",
+      "line": 13,
+      "evidence": "test_over_cap_clamped updated to 0.30 (matches new cap); new test_new_cap_boundary_allowed correctly asserts clamp(0.30)==0.30 since 0.30 is not strictly greater than MAX_DISCOUNT_RATE."
+    },
+    {
+      "severity": "info",
+      "file": "test_apply.py",
+      "line": 10,
+      "evidence": "test_apply_over_cap_uses_cap updated: 100*(1-0.30)=70.00 is correct; test_apply_at_new_cap also expects 70.0 which is correct."
+    },
+    {
+      "severity": "info",
+      "file": "test_savings.py",
+      "line": 10,
+      "evidence": "test_savings_over_cap_uses_cap updated: 100*0.30=30.00 is correct; test_savings_at_new_cap also expects 30.0 which is correct."
+    }
+  ]
+}

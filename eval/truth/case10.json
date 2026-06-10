@@ -1,0 +1,6 @@
+{
+  "case": "case10",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Large but fully in-scope change: head/pricing.py raises MAX_DISCOUNT_RATE 0.20->0.30 as declared, and every updated expectation across test_clamp.py/test_apply.py/test_savings.py traces directly to that single policy change; no undeclared behavior shift."
+}

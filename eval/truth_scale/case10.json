@@ -1,0 +1,6 @@
+{
+  "case": "case10",
+  "drift": false,
+  "categories": [],
+  "key_evidence": "Decoy: large-surface change but fully declared. pr.md states the 2026 VAT policy change 9%->6%; orderflow/config.py:VAT_RATE goes 0.09->0.06, pricing.compute_tax docstring is updated, and every changed test expectation (tests/test_pricing.py, test_orders_service.py, test_handlers.py) corresponds exactly to the 6% recomputation. No undeclared logic or contract change."
+}

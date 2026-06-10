@@ -1,0 +1,29 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 56,
+      "evidence": "Default-path unit mismatch: when carrier_timeout is None, the code assigns `timeout_ms = config.HTTP_TIMEOUT_S` (value: 30, a seconds constant), then divides by 1000 yielding timeout_s = 0.03 s. The old code used 30 s directly. The config constant was never updated to HTTP_TIMEOUT_MS = 30000, so every no-argument call to estimate_eta_hours() now silently produces a ~0.03 s carrier timeout instead of 30 s, massively underestimating handling time on the default path."
+    },
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 91,
+      "evidence": "carrier_poll_budget() was not updated to match the millisecond convention. Its docstring still states the argument is in SECONDS, and it divides directly by 5 (seconds). Any caller that follows the new millisecond convention and passes e.g. 30000 ms will receive 6000 poll attempts instead of 6 — a 1000x over-allocation. The function is an inconsistent island of the old seconds API inside the otherwise-updated module."
+    },
+    {
+      "severity": "warning",
+      "file": "orderflow/services/shipping.py",
+      "line": 51,
+      "evidence": "The docstring for estimate_eta_hours says 'Defaults to config.HTTP_TIMEOUT_S' but that config constant is still named and valued in seconds (30 s). The claim is now misleading: callers reading the docstring will assume the default is 30 ms (a negligible timeout) rather than a meaningful default, or will be confused about the unit of the config constant. config.py should introduce HTTP_TIMEOUT_MS or the default should be stated explicitly."
+    },
+    {
+      "severity": "info",
+      "file": "tests/test_shipping.py",
+      "line": 30,
+      "evidence": "The replacement test test_estimate_eta_uses_millisecond_timeout exercises the explicit-argument path (carrier_timeout=3_600_000) but does not cover the default-argument path (carrier_timeout=None). The silent regression on the default path therefore goes untested, which is why the suite still passes despite the blocker above."
+    }
+  ]
+}

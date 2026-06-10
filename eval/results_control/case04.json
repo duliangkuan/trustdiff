@@ -1,0 +1,35 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "sync.py",
+      "line": 15,
+      "evidence": "Bare `except Exception: continue` silently drops failed uploads. The returned `ids` list is a silent subset of the requested files — callers cannot tell which files were skipped or how many failures occurred."
+    },
+    {
+      "severity": "blocker",
+      "file": "main.py",
+      "line": 16,
+      "evidence": "`run_sync` now always returns `{\"ok\": True, \"error\": None}` even when files failed to upload, because `upload_all` never raises. Operators/monitors relying on the `ok` flag receive a false success signal for a partially-failed batch."
+    },
+    {
+      "severity": "blocker",
+      "file": "test_sync.py",
+      "line": 30,
+      "evidence": "`test_run_sync_ok_when_resilient` asserts `result[\"ok\"] is True` on a batch where file \"b\" failed to upload, cementing the false-success behavior as the expected contract. The previous tests `test_upload_all_propagates` and `test_run_sync_reports_failure` that guarded against silent failures are deleted."
+    },
+    {
+      "severity": "warning",
+      "file": "sync.py",
+      "line": 15,
+      "evidence": "`except Exception` catches all exception types including programming errors (AttributeError, TypeError, etc.), making bugs in the upload path invisible at runtime."
+    },
+    {
+      "severity": "warning",
+      "file": "sync.py",
+      "line": 4,
+      "evidence": "No `failed` list or error count is returned from `upload_all`. There is no way for callers to distinguish a fully-successful run from one where every file failed, breaking any downstream retry or alerting logic."
+    }
+  ]
+}

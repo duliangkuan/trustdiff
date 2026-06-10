@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "info",
+      "file": "orderflow/services/orders.py",
+      "line": 92,
+      "evidence": "head uses `customer_id=customer.id` (attribute of fetched Customer object) where base used `customer_id=customer_id` (the raw function parameter). In the current Repository implementation get_customer is a dict lookup keyed on customer_id, so customer.id == customer_id always. Functionally equivalent today, but a future Repository that normalises ids on write (e.g. lowercasing) would make the two differ silently.",
+      "why_tests_missed_it": "All test fixtures pass string literals like 'C1' that are stored and returned verbatim, so customer.id == customer_id in every exercised path. No test probes a caller-supplied id that differs in form from the stored id.",
+      "fix": "No action required for the current implementation. Worth a comment noting the equivalence assumption if the Repository contract is ever broadened."
+    }
+  ]
+}

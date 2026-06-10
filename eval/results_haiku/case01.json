@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/inventory.py",
+      "line": 55,
+      "evidence": "list_low_stock() now returns items from a list comprehension with no sorting operation. Old implementation (line 67 in base) explicitly sorted by shortage: items.sort(key=lambda item: item.shortage). The docstring (lines 41-52 in base) documents this as a contract: 'The returned list is sorted by shortage in ASCENDING order (least urgent first, most urgent last). This ordering is part of the contract: downstream consumers — notably the restock-priority logic in the api layer — rely on the most-urgent item being last so they can pop from the end.'",
+      "why_tests_missed_it": "test_handlers.py lines 37-48 (test_restock_priorities_most_urgent_first) and lines 51-58 (test_restock_priorities_respects_top_n) were updated to mock inventory.list_low_stock with a hardcoded _ordered_low() helper (lines 22-34) that provides pre-sorted items. The tests no longer call the real list_low_stock, so they cannot detect that the real function no longer maintains the ordering contract. This is a textbook case of test-masking via mock replacement of the code under change (T3).",
+      "fix": "Restore the sort operation in list_low_stock: after the list comprehension (line 67), add items.sort(key=lambda item: item.shortage). Also revert the handler test mocks: test_restock_priorities_most_urgent_first and test_restock_priorities_respects_top_n should call the real list_low_stock on seeded_repo and assert on the actual ordering, removing the monkeypatch and _ordered_low() helper."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 37,
+      "evidence": "test_restock_priorities_most_urgent_first (line 37) and test_restock_priorities_respects_top_n (line 51) both use monkeypatch to replace 'orderflow.api.handlers.inventory.list_low_stock' with a lambda that calls _ordered_low() (lines 41 and 54). The _ordered_low() helper (lines 22-34) returns a hardcoded, pre-sorted list. This mock replaces the exact function that the PR changed, so the test can no longer fail if list_low_stock stops maintaining its documented ordering contract.",
+      "why_tests_missed_it": "By mocking list_low_stock, the test suite never exercises the real implementation changed in this PR. The real function's loss of sorting is completely hidden by the mock. The test passes because it tests the handler's ability to reverse a pre-sorted list, not the handler's real-world integration with list_low_stock's actual return value.",
+      "fix": "Remove the monkeypatch and _ordered_low() fixture. Run test_restock_priorities_most_urgent_first and test_restock_priorities_respects_top_n directly against seeded_repo without mocking, so they exercise the real list_low_stock behavior and immediately fail if ordering is lost."
+    }
+  ]
+}

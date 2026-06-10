@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "blocker",
+      "file": "orderflow/config.py",
+      "line": 13,
+      "evidence": "MAX_RETRIES changed from 3 to 0, disabling retries entirely. PR claims 'No other behavior changes' but this is a production behavior change that affects all transient operations (notification send, external lookup).",
+      "why_tests_missed_it": "test_retry_recovers_within_budget() was updated in parallel to use fail_times=0 (no failures) instead of fail_times=2, so it still passes green but no longer exercises the retry path",
+      "fix": "Revert MAX_RETRIES to 3 in config.py, or if this change is intentional, update the PR description to document it and provide business justification"
+    },
+    {
+      "check": "S1",
+      "category": "scope-creep",
+      "severity": "warning",
+      "file": "orderflow/utils/text.py",
+      "line": 12,
+      "evidence": "Function renamed from format_size() to fmt_size(). All 3 test cases renamed in parallel (test_format_size_bytes → test_fmt_size_bytes, etc.). This rename is not mentioned in the PR description and is orthogonal to the shipping fee fix.",
+      "why_tests_missed_it": "Tests were updated to match the renamed function, so they pass. However, external callers (scripts, serialized names, reflection) that depend on 'format_size' would now break.",
+      "fix": "Either revert the rename and keep format_size(), or if this rename is necessary, update the PR description to explain why and confirm all external consumers are updated"
+    },
+    {
+      "check": "T2",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_notifications.py",
+      "line": 44,
+      "evidence": "test_retry_recovers_within_budget() comment changed from '# MAX_RETRIES=3 -> 4 attempts; 2 failures then success.' to no comment, and fail_times changed from 2 to 0. With 0 failures, the test no longer exercises retry logic at all—it only verifies a single successful attempt.",
+      "why_tests_missed_it": "The test still passes (result.all_ok is true, flaky.calls matches expectation) because the mocked transport succeeds on the first try. The test suite cannot detect that retry behavior has been disabled.",
+      "fix": "Restore fail_times=2 and the original test comment, or add explicit documentation for why retries are no longer needed. The test must exercise the actual retry path it claims to validate."
+    }
+  ]
+}

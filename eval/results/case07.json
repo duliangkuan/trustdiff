@@ -1,0 +1,15 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "check": "C3",
+      "category": "contract-change",
+      "severity": "warning",
+      "file": "stats.py",
+      "line": 16,
+      "evidence": "variance() calls mean(values) without catching exceptions. Before this PR, variance([]) raised ZeroDivisionError (propagated from mean). After this PR, variance([]) raises ValueError(\"empty dataset\") instead. The PR declares the error-contract change only for mean(); the same change silently applies to variance() as a side-effect.",
+      "why_tests_missed_it": "No test exercises variance([]) in either base or head; the changed error type for variance on empty input is never observed by the test suite.",
+      "fix": "Document in variance()'s docstring that it raises ValueError on empty input (mirroring mean), or add a test for variance([]) so the changed error contract is explicit and locked down."
+    }
+  ]
+}

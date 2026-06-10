@@ -1,0 +1,6 @@
+{
+  "case": "case02",
+  "drift": true,
+  "categories": ["scope-creep", "config-change"],
+  "key_evidence": "Beyond the declared pagination fix, head/http_client.py silently changes DEFAULT_RETRIES from 3 to 0 (disabling all retries) and head/tools.py renames format_size to fmt_size; neither change is mentioned in pr.md."
+}

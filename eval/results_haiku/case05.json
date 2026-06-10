@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 49,
+      "evidence": "Docstring changed to state carrier_timeout is in MILLISECONDS, but line 56 still defaults to config.HTTP_TIMEOUT_S (which is in SECONDS per orders.py line 154). The real caller at orders.py:157 passes config.HTTP_TIMEOUT_S expecting seconds; under the new code it will be interpreted as milliseconds, causing ~1000x underestimation of handling time.",
+      "why_tests_missed_it": "test_estimate_eta_uses_seconds_timeout was deleted (line 30-33 of base). That test explicitly exercised the default seconds path with carrier_timeout=3600 and would have caught the unit mismatch. New tests only use explicit millisecond values (3_600_000), so they pass. The mock in test_orders_service.py:93-95 replaces estimate_eta_hours entirely, so it never exercises the real default logic.",
+      "fix": "Either (a) convert config.HTTP_TIMEOUT_S to milliseconds at the call site in orders.py before passing to estimate_eta_hours, (b) keep the default in seconds and convert it to milliseconds inside estimate_eta_hours, or (c) add a milliseconds config constant. Restore test_estimate_eta_uses_seconds_timeout or add a test that exercises the real default path in orders.py."
+    },
+    {
+      "check": "T1",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_shipping.py",
+      "line": 30,
+      "evidence": "test_estimate_eta_uses_seconds_timeout was deleted in the HEAD version. This test directly exercised the old contract (timeout in seconds with default fallback) and would catch the semantic contract drift introduced in C2.",
+      "why_tests_missed_it": "By deleting the test that would fail, the suite trivially turns green. The PR description does not justify why this test is obsolete — it claims the parameter is upgraded to milliseconds, but that's exactly what should fail on the old code.",
+      "fix": "Restore test_estimate_eta_uses_seconds_timeout or replace it with a test that verifies the behavior when the default config value is used. Do not delete the only test that exercises the default-parameter code path."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/inventory.py",
+      "line": 55,
+      "evidence": "The new list comprehension (lines 55-67) iterates repo.list_products() with no sort call. The base implementation (base inventory.py line 67) returned `items` after `items.sort(key=lambda item: item.shortage)`. The base docstring (base lines 42-45) declared 'sorted by shortage in ASCENDING order … part of the contract'. The head docstring drops this guarantee entirely. handlers.py line 44-51 explicitly documents: 'This relies on the contract of inventory.list_low_stock: that function returns items sorted by ascending shortage (most urgent LAST). We therefore take items from the END of that list to get the most urgent first.' — handlers.py is unchanged, so its tail-slice logic now produces undefined ordering.",
+      "why_tests_missed_it": "test_list_low_stock_sorted_ascending_by_shortage (the only test asserting ascending order) was deleted in this PR. The two handler tests that previously called through to the real list_low_stock were monkeypatched to return a hand-crafted pre-sorted list (_ordered_low()), so they can no longer detect an ordering regression in the real function.",
+      "fix": "Restore sorted(key=lambda item: item.shortage) at the end of the list comprehension in list_low_stock, OR update the docstring of list_low_stock to declare the result is unordered AND update handlers.restock_priorities to sort before slicing. Either way, restore test_list_low_stock_sorted_ascending_by_shortage as a live (non-mocked) test."
+    },
+    {
+      "check": "T1",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_inventory.py",
+      "line": 15,
+      "evidence": "test_list_low_stock_sorted_ascending_by_shortage (base tests/test_inventory.py lines 15-22) was the only test enforcing the ascending-shortage ordering contract. It was deleted in this PR and replaced by test_list_low_stock_reports_all_low_items (head lines 15-19), which checks membership and per-SKU shortage values but does not assert any ordering. The PR description frames the ordering as 'incidental repository iteration order', but handlers.py lines 44-47 explicitly documents ascending-shortage order as a named inter-module contract.",
+      "why_tests_missed_it": "The test that would catch the regression was deleted by this PR; no replacement ordering test was added.",
+      "fix": "Restore test_list_low_stock_sorted_ascending_by_shortage (or an equivalent) that asserts shortages == sorted(shortages) and the ordering of specific SKUs on the real seeded_repo fixture without mocking."
+    },
+    {
+      "check": "T3",
+      "category": "test-masking",
+      "severity": "blocker",
+      "file": "tests/test_handlers.py",
+      "line": 37,
+      "evidence": "test_restock_priorities_most_urgent_first and test_restock_priorities_respects_top_n (head lines 37-58) now monkeypatch 'orderflow.api.handlers.inventory.list_low_stock' with a lambda returning _ordered_low() — a hand-crafted list already sorted in ascending shortage order. In the base (base test_handlers.py lines 22-39), these tests called handlers.restock_priorities(seeded_repo) against the real implementation and would fail if list_low_stock returned an unsorted result. The monkeypatched tests now test the handler's slicing logic against a pinned mock, not the real function. The changed function (list_low_stock) is exactly what is being mocked away.",
+      "why_tests_missed_it": "The mock replaces the very function whose ordering behaviour changed, so the handler tests can no longer detect that list_low_stock no longer sorts. This is the classic T3 failure mode.",
+      "fix": "Remove the monkeypatch from the two handler tests so they exercise the real list_low_stock. If repository iteration order is non-deterministic in the test environment, fix that at the repository/fixture level rather than by mocking the scan."
+    }
+  ]
+}

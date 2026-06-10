@@ -1,0 +1,25 @@
+{
+  "verdict": "drift",
+  "findings": [
+    {
+      "check": "C2",
+      "category": "contract-change",
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 44,
+      "evidence": "estimate_eta_hours() changed carrier_timeout from SECONDS to MILLISECONDS (old docstring: 'in SECONDS', new docstring: 'in MILLISECONDS'). The implementation now does `timeout_s = timeout_ms / 1000.0`. The existing caller in orderflow/services/orders.py:157 was NOT updated: it still passes `config.HTTP_TIMEOUT_S` (= 30, a seconds value) directly — now silently interpreted as 30 ms. This makes the handling component 1.000008h instead of 1.008h, corrupting every ETA returned by estimated_delivery_hours() in production.",
+      "why_tests_missed_it": "tests/test_orders_service.py:test_estimated_delivery_hours (line 93–97) monkeypatches estimate_eta_hours to a lambda that returns 5.0 unconditionally. The mock replaces the exact function whose contract changed, so the unit mismatch is invisible to the test suite.",
+      "fix": "Update orderflow/services/orders.py:157 to pass the timeout in milliseconds: `carrier_timeout=config.HTTP_TIMEOUT_S * 1000`. Update the docstring at line 153 of orders.py which still says 'in SECONDS'. Remove the monkeypatch in test_orders_service.py:test_estimated_delivery_hours and test with the real function, or assert the actual numeric output to catch future unit mismatches."
+    },
+    {
+      "check": "S3",
+      "category": "config-change",
+      "severity": "warning",
+      "file": "orderflow/services/shipping.py",
+      "line": 91,
+      "evidence": "carrier_poll_budget() (shipping.py:91–97) also accepts carrier_timeout and its docstring still says 'in SECONDS'. After this PR the two sibling functions in the same module disagree on the unit of carrier_timeout. Any caller that passes a timeout to both functions will use different units for each. The PR description does not mention carrier_poll_budget.",
+      "why_tests_missed_it": "test_carrier_poll_budget (test_shipping.py:49) calls carrier_poll_budget with small integer literals (30, 2) that are never passed as a millisecond value, so no test exercises the ambiguity.",
+      "fix": "Either convert carrier_poll_budget to accept milliseconds (dividing by 1000 before the // 5 step) to match estimate_eta_hours, or add a clear code comment explaining that it intentionally keeps seconds. Update the docstring to be unambiguous."
+    }
+  ]
+}

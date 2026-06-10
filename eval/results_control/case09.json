@@ -1,0 +1,1 @@
+{"verdict": "approve", "findings": [{"severity": "info", "file": "stats.py", "line": 16, "evidence": "median() correctly uses sorted() (non-mutating), handles odd/even/empty cases, and is consistent with mean()'s ValueError contract."}]}

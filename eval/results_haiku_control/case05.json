@@ -1,0 +1,17 @@
+{
+  "verdict": "block",
+  "findings": [
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 91,
+      "evidence": "carrier_poll_budget() docstring says 'carrier_timeout is in SECONDS' but the PR changed estimate_eta_hours() to accept carrier_timeout in MILLISECONDS. This creates a semantic contradiction: callers will be confused about the unit, and code mixing these two functions will silently compute wrong poll budgets. The function needs either unit conversion or its docstring updated to clarify it accepts milliseconds."
+    },
+    {
+      "severity": "blocker",
+      "file": "orderflow/services/shipping.py",
+      "line": 56,
+      "evidence": "Line 56 assigns carrier_timeout value directly to timeout_ms variable, then divides by 1000 on line 57. However, on line 56 the default falls back to config.HTTP_TIMEOUT_S (which is in SECONDS per config.py line 16: 'Network/IO timeout for outbound calls, in seconds'). This means when carrier_timeout is None, timeout_ms receives a value in seconds, not milliseconds, creating a unit mismatch in the fallback path. The conversion to timeout_s on line 57 would then incorrectly divide seconds by 1000."
+    }
+  ]
+}
